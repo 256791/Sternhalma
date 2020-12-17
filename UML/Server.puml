@@ -1,0 +1,127 @@
+@startuml
+!define DARKBLUE
+!includeurl https://raw.githubusercontent.com/Drakemor/RedDress-PlantUML/master/style.puml
+
+package server {
+package menager {
+    class Server {
+        -players: List<Player>
+        -games: List<Game>
+        -listener: ServerSocket
+        --
+        +Server(int)
+        +findGame(int) : Game
+        +newGame(JSONObject) : Game
+        -listen()
+    }
+
+    class GameBuilderDirector {
+        -builder : GameBuilder
+        --
+        +build(JSONObject): Game
+        -changeBuilder(GameBuilder)
+    }
+
+    class GameBuilder <<interface>> {
+            +build(JSONObject): Game
+    }
+
+    class Player {
+        -playerId: int
+        -game: Game
+        -isAdmin: boolean
+        -yourTurn: boolean
+        -socket: Socket
+        --
+        +Player()
+        +respond(JSONObject): void
+        -run() : void
+        -joinGame(Game) : boolean
+    }
+
+    class Game <<abstract>>{
+        -gameId: int
+        -players: Player[]
+        --
+        +joinGame(Player)
+        +action(JSONObject)
+        +lobbyOption(JSONObject)
+    }
+}
+package sternhalma {
+    class Sternhalma{
+        -GameMaster: GameMaster
+        -board: Board
+        --
+        +Sternhalma(Board, GameMaster)
+        +action(JSONObject)
+    }
+
+    class SternhalmaBuilder {
+        -game : Sternhalma
+        --
+        +build(JSONObject) : Game
+        -buildBoard(JSONObject) : Board
+    }
+
+    class Board{
+        -type : int
+        -playerCount : int
+        #pones : List<Pone>
+        #fields : List<Field>
+        --
+        +Board(int, List<Pone>, List<Field>)
+        +changePlayerCount(int)
+        +action(JSONObject)
+        +getPone(int, int) : Pone
+        -move(Pone, Field)
+
+    }
+
+    class GameMaster {
+        -board: Board
+        --
+        +isValid(Pone, Field) : boolean
+        +hasEnded(): boolean
+    }
+
+    class Field{
+        #x : int
+        #y : int
+        #player : int
+        #siblings: Field[6]
+        --
+        +Field(int, int, int)
+        +setSiblings(Field[6])
+    }
+    class Pone{
+        #x : int
+        #y : int
+        #playerId: int
+        #currentFiled : Field
+        --
+        +Pone(int, int, int)
+        +changeFiled(Field)
+    }
+}
+}
+
+    Server - GameBuilderDirector
+    GameBuilderDirector *-- GameBuilder
+    GameBuilder <|- SternhalmaBuilder
+
+    Server *-- Player
+    Server *--- Game
+    Player -- Game
+    Game <|--- Sternhalma
+
+    SternhalmaBuilder - Sternhalma
+    SternhalmaBuilder --- Board
+    SternhalmaBuilder -- GameMaster
+
+    Sternhalma  *--- Board
+    Sternhalma *-- GameMaster
+    GameMaster --Board
+    Board *-- Field
+    Board *-- Pone
+@enduml
