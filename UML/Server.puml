@@ -4,100 +4,167 @@
 
 package server {
 package menager {
-    class Server {
+    class Server <extends Thread>{
+        -port: int
+        -running: boolean
+        -socketServer: ServerSocket
+        ..
         -players: List<Player>
         -games: List<Game>
-        -listener: ServerSocket
+        -currentPlayerId: int
+        -currentGameId: int
         --
-        +Server(int)
-        +findGame(int) : Game
-        +newGame(JSONObject) : Game
-        -listen()
+        +Server(port: int)
+        +isRunning(): boolean
+        +close()
+        +run()
+        +newGame(properties: JSONObject): Game
+        +findGame(id: int): Game
+        +removeGame(game: Game)
+        +removePlayer(player: Player)
+        -newPlayer(socket: Socket)
+        -initServer()
     }
 
     class GameBuilderDirector {
         -builder : GameBuilder
         --
-        +build(JSONObject): Game
+        +build(server: Server, id: int, properties: JSONObject): Game
         -changeBuilder(GameBuilder)
     }
 
-    class GameBuilder <<interface>> {
+    interface GameBuilder <<interface>> {
             +build(JSONObject): Game
     }
 
-    class Player {
-        -playerId: int
+    class Player <extends Thread>{
+        -id: int
         -game: Game
-        -isAdmin: boolean
-        -yourTurn: boolean
+        -running: boolean
+        ..
+        -server: Server
         -socket: Socket
+        -in: BufferedReader
+        -out: PrintWriter
         --
-        +Player()
-        +respond(JSONObject): void
-        -run() : void
-        -joinGame(Game) : boolean
+        +Player(server: Server, id: int, socket: Socket)
+        +getPlayerId(): int
+        +close()
+        +run()
+        +respond(message: String)
+        +respond(message: JSONObject)
+        +joinGame(Game)
+        -handleRequest(request: JSONObject)
     }
 
-    class Game <<abstract>>{
-        -gameId: int
-        -players: Player[]
+    abstract class Game <<abstract>> {
+        -server: Server
+        -id: int
+        ..
+        #playerCount: int
+        #players: List<Player>
+        #adminId: int
+        #started: boolean
         --
-        +joinGame(Player)
-        +action(JSONObject)
-        +lobbyOption(JSONObject)
+        +Game(server: Server, id: int)
+        +getId(): int
+        +join(player: Player): boolean
+        +leave(player Player)
+        +action(player: Player, action: JSONObject)
+        +option(player: Player, option: JSONObject)
+        #getGameInfo(): JSONObject
+        #sendToAll(message: JSONObject)
+        #sendToAll(message: String)
     }
-}
+    }
+
 package sternhalma {
     class Sternhalma{
-        -GameMaster: GameMaster
+        -currentPlayerId: int
         -board: Board
         --
-        +Sternhalma(Board, GameMaster)
+        +Sternhalma(server: Server, id: int)
+        +setBoard(board: Board)
+        +setPlayerCount(int: playerCount): boolean
+        +option(JSONObject)
         +action(JSONObject)
+        #getGameInfo(): JSONObject
+        -endGame()
     }
 
     class SternhalmaBuilder {
-        -game : Sternhalma
+        -game: Sternhalma
         --
-        +build(JSONObject) : Game
-        -buildBoard(JSONObject) : Board
+        +build(JSONObject): Game
+        -buildBoard(JSONObject): Board
+        -buildGameMaster(JSONObject): GameMaster
     }
 
     class Board{
         -type : int
         -playerCount : int
+        -currentPlayer: int
+        -GameMaster: GameMaster
         #pones : List<Pone>
         #fields : List<Field>
+        ..
+        -boardStatus JSONObject
+        -statusFlag boolean
         --
-        +Board(int, List<Pone>, List<Field>)
-        +changePlayerCount(int)
-        +action(JSONObject)
-        +getPone(int, int) : Pone
-        -move(Pone, Field)
-
+        +Board(type: int, List<Pone>, List<Field>)
+        +setGameMaster(GameMaster)
+        +startGame(players: List<Player>)
+        +move(fx: int,fy: int,tx: int,ty: int,player: int) : boolean
+        +endTurn(): boolean
+        +getBoardStatus(): JSONObject
+        +getType(): int
     }
 
     class GameMaster {
+        -ruleSet: List<Rule>
         -board: Board
+        -moveCount: int
+        -lastPlayer: int
         --
-        +isValid(Pone, Field) : boolean
-        +hasEnded(): boolean
+        +GameMaster(board: Board)
+        +addRule(rule: Rule)
+        +isValid(from: Pone, to: Field, player: int): boolean
+        +hasWon(player: Player): boolean
+    }
+
+    interface Rule <<interface>> {
+        isValid(from: Pone, to: Field, player: int, move: int): int
+    }
+    note right
+    checkMove returns
+     0 if rule doesn't apply
+     1 if move is valid
+    -1 if move is invalid
+    end note
+
+    class OnePerRoundRule{
+    }
+    class BasicMoveRule{
+    }
+    class JumpMoveRule{
+    }
+    class LockedMoveRule{
     }
 
     class Field{
         #x : int
         #y : int
         #player : int
-        #siblings: Field[6]
+        #adjacent: Field[6]
+        #currentPone: Pone
         --
         +Field(int, int, int)
-        +setSiblings(Field[6])
+        +setAdjacent(Field[6])
     }
     class Pone{
         #x : int
         #y : int
-        #playerId: int
+        #player: int
         #currentFiled : Field
         --
         +Pone(int, int, int)
@@ -112,16 +179,24 @@ package sternhalma {
 
     Server *-- Player
     Server *--- Game
-    Player -- Game
+    Player --o Game
     Game <|--- Sternhalma
 
     SternhalmaBuilder - Sternhalma
-    SternhalmaBuilder --- Board
+    SternhalmaBuilder -- Board
     SternhalmaBuilder -- GameMaster
 
-    Sternhalma  *--- Board
-    Sternhalma *-- GameMaster
-    GameMaster --Board
+    Sternhalma  *-- Board
+    GameMaster -* Board
     Board *-- Field
     Board *-- Pone
+
+    GameMaster *-- Rule
+    Pone - Rule
+    Field - Rule
+    Rule <|--- OnePerRoundRule
+    Rule <|--- BasicMoveRule
+    Rule <|--- JumpMoveRule
+    Rule <|--- LockedMoveRule
+
 @enduml
