@@ -107,7 +107,7 @@ public class Server extends Thread {
      */
     public synchronized Game newGame(JSONObject properties) throws JSONException {
         GameBuilderDirector director = new GameBuilderDirector();
-        Game game = director.build(currentGameId, properties);
+        Game game = director.build(this, currentGameId, properties);
         games.add(game);
         currentGameId++;
         return game;

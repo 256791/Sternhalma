@@ -27,15 +27,31 @@ public class Player extends Thread{
 
 
     public static final String PING;
+    public static final String ACCEPT;
+    //notifications
+    public static final String ADMIN;
+    public static final String TURN;
+    public static final String TURNEND;
+    //rejections
+    public static final String NO_PERM;
+    public static final String WRONG_VAL;
+    //errors
     public static final String JSON_ERR;
     public static final String GAME_CON_ERR;
-    public static final String ACCEPT;
 
     static {
         PING = "{\"type\": \"ping\"}";
+        ACCEPT = "{\"type\": \"accept\"}";
+
+        ADMIN = "{\"type\": \"notify\", \"message\": \"youAreTheNewAdmin\"}";
+        TURN = "{\"type\": \"notify\", \"message\": \"yourTurn\"}";
+        TURNEND = "{\"type\": \"notify\", \"message\": \"turnEnded\"}";
+
+        NO_PERM = "{\"type\": \"reject\", \"reason\": \"noPermissions\"}";
+        WRONG_VAL = "{\"type\": \"reject\", \"reason\": \"wrongValue\"}";
+
         JSON_ERR = "{\"type\": \"error\", \"error\": \"JSONException\"}";
         GAME_CON_ERR = "{\"type\": \"error\", \"error\": \"CantConnectToGame\"}";
-        ACCEPT = "{\"type\": \"accept\"}";
     }
 
 
@@ -95,6 +111,9 @@ public class Player extends Thread{
             } catch (JSONException e) {
                 respond(JSON_ERR);
             }
+        }
+        if(game != null){
+            game.leave(this);
         }
     }
 
@@ -163,6 +182,7 @@ public class Player extends Thread{
     private void joinGame(Game game) {
         if(this.game != null) {
             this.game.leave(this);
+            this.game = null;
         }
         if(game != null) {
             if(game.join(this)) {

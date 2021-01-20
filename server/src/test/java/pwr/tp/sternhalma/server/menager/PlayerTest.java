@@ -75,7 +75,7 @@ public class PlayerTest {
     @Test(timeout = 1000)
     public void testCreateJoin(){
         out.println("{\"type\": \"create\", \"properties\": " +
-                "{\"game\": \"sternhalma\", \"players\": 2}, \"board\": \"default\"}}");
+                "{\"game\": \"sternhalma\", \"players\": 2, \"board\": \"default\"}}");
 
         try { response = in.readLine(); } catch (IOException e) {
             fail("Could not connect to server");
@@ -87,7 +87,7 @@ public class PlayerTest {
             Socket client2 = new Socket("localhost", PORT);
             PrintWriter out2 = new PrintWriter(client2.getOutputStream(), true);
             BufferedReader in2 = new BufferedReader(new InputStreamReader(client2.getInputStream()));
-            out2.println("{\"type\": \"join\", \"id\": \"1\"}");
+            out2.println("{\"type\": \"join\", \"id\": 1}");
             response = in2.readLine();
         } catch (IOException e) {
             fail("Could not connect to server");
@@ -96,9 +96,9 @@ public class PlayerTest {
         if(response.equals(Player.GAME_CON_ERR)) fail("Cant create game");
         if(response.equals(Player.JSON_ERR)) fail("Cant create game");
 
-        out.println("{\"type\": \"join\", \"id\": \"22\"}");
+        out.println("{\"type\": \"join\", \"id\": 22}");
 
-        try { response = in.readLine(); } catch (IOException e) {
+        try {in.readLine(); in.readLine(); response = in.readLine(); } catch (IOException e) {
             fail("Could not connect to server");
         }
 
