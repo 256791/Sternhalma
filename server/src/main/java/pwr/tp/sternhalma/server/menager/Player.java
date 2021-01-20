@@ -179,7 +179,7 @@ public class Player extends Thread{
      * Private method used to disconnect from last game and connect to new one.
      * @param game Game to be connected to
      */
-    private void joinGame(Game game) {
+    public void joinGame(Game game) {
         if(this.game != null) {
             this.game.leave(this);
             this.game = null;
