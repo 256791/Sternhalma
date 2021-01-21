@@ -43,7 +43,7 @@ public class Sternhalma extends Game {
      */
     protected boolean setPlayerCount(int playerCount) {
         if(players.size()>playerCount) return false;
-        if(playerCount != 2 && playerCount != 4 && playerCount != 6) return false;
+        if(playerCount != 2 && playerCount != 3 && playerCount != 4 && playerCount != 6) return false;
         this.playerCount = playerCount;
         return true;
     }
@@ -57,56 +57,62 @@ public class Sternhalma extends Game {
     @Override
     public void action(Player player, JSONObject action) throws JSONException {
         String type = action.getString("type");
-        switch(type) {
+        switch (type) {
             case "leave" -> {
                 leave(player);
-                break;
             }
             case "getGameInfo" -> {
                 player.respond(getGameInfo());
-                break;
             }
             case "getBoardStatus" -> {
                 player.respond(board.getBoardStatus());
-                break;
             }
             case "move" -> {
-                if(currentPlayerId == player.getPlayerId()) {
-                    int sx = action.getInt("fromX");
-                    int sy = action.getInt("fromY");
-                    int dx = action.getInt("toX");
-                    int dy = action.getInt("toY");
-                    if (board.move(sx, sy, dx, dy, player.getPlayerId())) {
-                        player.respond(Player.ACCEPT);
-                    } else {
-                        player.respond(Player.WRONG_VAL);
+                if (currentPlayerId == player.getPlayerId()) {
+                    synchronized (this) {
+                        int sx = action.getInt("fromX");
+                        int sy = action.getInt("fromY");
+                        int dx = action.getInt("toX");
+                        int dy = action.getInt("toY");
+                        if (board.move(sx, sy, dx, dy, player.getPlayerId())) {
+                            player.respond(Player.ACCEPT);
+                        } else {
+                            player.respond(Player.WRONG_VAL);
+                        }
                     }
-                }else{
-                    player.respond(Player.NO_PERM);
-                }
-                break;
+                } else {
+                player.respond(Player.NO_PERM);
+            }
             }
             case "endTurn" -> {
-                if(currentPlayerId == player.getPlayerId()) {
-                    if(board.endTurn()){
+                if (currentPlayerId == player.getPlayerId()) {
+                    if (board.endTurn()) {
                         JSONObject win = new JSONObject();
-                        try{
+                        try {
                             win.append("type", "notify");
                             win.append("message", "winner");
                             win.append("id", player.getPlayerId());
-                        } catch (JSONException ignore) {}
+                        } catch (JSONException ignore) {
+                        }
                         sendToAll(win);
                         leave(player);
                     }
-                    player.respond(Player.ACCEPT);
-                } else {
-                    player.respond(Player.WRONG_VAL);
+                    synchronized (this) {
+                        if (currentPlayerId == player.getPlayerId()) {
+                            int index = players.indexOf(player);
+                            index = (index + 1) % playerCount;
+                            Player tplayer = players.get(index);
+                            currentPlayerId = tplayer.getPlayerId();
+                            player.respond(Player.ACCEPT);
+                            tplayer.respond(Player.TURN);
+                        }
+                        else player.respond(Player.NO_PERM);
+                    }
                 }
-                break;
+                else player.respond(Player.NO_PERM);
             }
             default -> {
                 player.respond(Player.WRONG_VAL);
-                break;
             }
         }
     }
@@ -119,22 +125,22 @@ public class Sternhalma extends Game {
      */
     @Override
     public void option(Player player, JSONObject change) throws JSONException {
-        if(player.getPlayerId() == adminId){
-            String option = change.getString("option");
-            Object value = change.get("value");
-            switch (option){
-                case "playerCount" -> {
-                    if(value instanceof Integer){
-                        int val = (Integer) value;
-                        if(setPlayerCount(val)){
-                            player.respond(Player.ACCEPT);
-                        }
-                        player.respond(Player.WRONG_VAL);
-                    }else throw new JSONException("Type mismatch");
-                }
-                case "admin" -> {
-                    if(value instanceof Integer){
-                        synchronized (this) {
+        synchronized (this) {
+            if (player.getPlayerId() == adminId) {
+                String option = change.getString("option");
+                Object value = change.get("value");
+                switch (option) {
+                    case "playerCount" -> {
+                        if (value instanceof Integer) {
+                            int val = (Integer) value;
+                            if (setPlayerCount(val)) {
+                                player.respond(Player.ACCEPT);
+                            }
+                            player.respond(Player.WRONG_VAL);
+                        } else throw new JSONException("Type mismatch");
+                    }
+                    case "admin" -> {
+                        if (value instanceof Integer) {
                             for (Player p : players) {
                                 if (p.getPlayerId() == (Integer) value) {
                                     adminId = (Integer) value;
@@ -143,32 +149,29 @@ public class Sternhalma extends Game {
                                     return;
                                 }
                             }
-                        }
-                        player.respond(Player.WRONG_VAL);
-                    }else throw new JSONException("Mismatch types");
-                }
-                case "start" -> {
-                    if(!started) {
-                        if (players.size() == playerCount) {
-                            started = true;
-                            player.respond(Player.ACCEPT);
-                            Player tplayer;
-                            synchronized (this) {
-                                tplayer = players.get(0);
+                            player.respond(Player.WRONG_VAL);
+                        } else throw new JSONException("Mismatch types");
+                    }
+                    case "start" -> {
+                        if (!started) {
+                            if (players.size() == playerCount) {
+                                started = true;
+                                player.respond(Player.ACCEPT);
+                                Player tplayer;
+                                    tplayer = players.get(0);
+                                currentPlayerId = tplayer.getPlayerId();
+                                tplayer.respond(Player.TURN);
+                            } else {
+                                player.respond(Player.WRONG_VAL);
                             }
-                            currentPlayerId = tplayer.getPlayerId();
-                            tplayer.respond(Player.TURN);
                         } else {
                             player.respond(Player.WRONG_VAL);
                         }
-                    }else{
-                        player.respond(Player.WRONG_VAL);
                     }
-                    break;
                 }
+            } else {
+                player.respond(Player.NO_PERM);
             }
-        } else{
-            player.respond(Player.NO_PERM);
         }
     }
 

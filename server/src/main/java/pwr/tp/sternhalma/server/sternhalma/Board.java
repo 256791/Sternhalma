@@ -58,16 +58,46 @@ public class Board {
         for(int i=0;i<playerCount; i++){
             arr[i]=players.get(i).getPlayerId();
         }
-        synchronized (this){
-            Iterator<Pone> iter = pones.iterator();
-            while(iter.hasNext()){
-                Pone pone = iter.next();
-                if(pone.player > playerCount) iter.remove();
-                else pone.player = arr[pone.player - 1];
+        Iterator<Pone> iter = pones.iterator();
+        while(iter.hasNext()){
+            Pone pone = iter.next();
+            if(playerCount == 2){
+                if(pone.player == 1) pone.player = arr[0];
+                else if(pone.player == 4) pone.player = arr[1];
+                else iter.remove();
+            } else if(playerCount == 3){
+                if(pone.player == 1) pone.player = arr[0];
+                else if(pone.player == 3) pone.player = arr[1];
+                else if(pone.player == 5) pone.player = arr[2];
+                else iter.remove();
+            } else if(playerCount == 4){
+                if(pone.player == 1) pone.player = arr[0];
+                else if(pone.player == 2) pone.player = arr[1];
+                else if(pone.player == 4) pone.player = arr[2];
+                else if(pone.player == 5) pone.player = arr[3];
+                else iter.remove();
+            } else if (playerCount == 6){
+                pone.player = arr[pone.player-1];
             }
-            for(Field field: fields){
-                if(field.player  > playerCount) field.player = 0;
-                else if(field.player!=0) field.player = arr[field.player - 1];
+        }
+        for(Field field: fields){
+            if(playerCount == 2){
+                if(field.player == 1) field.player = arr[1];
+                else if(field.player == 4) field.player = arr[0];
+                else field.player = 0;
+            } else if(playerCount == 3){
+                if(field.player == 2) field.player = arr[2];
+                else if(field.player == 4) field.player = arr[0];
+                else if(field.player == 6) field.player = arr[1];
+                else field.player = 0;
+            } else if(playerCount == 4){
+                if(field.player == 1) field.player = arr[2];
+                else if(field.player == 2) field.player = arr[3];
+                else if(field.player == 4) field.player = arr[0];
+                else if(field.player == 5) field.player = arr[1];
+                else field.player = 0;
+            } else if (playerCount == 6){
+                if(field.player != 0) field.player = arr[(field.player+2)%6];
             }
         }
     }
@@ -86,18 +116,16 @@ public class Board {
         currentPlayer=player;
         Pone from = null;
         Field to = null;
-        synchronized (this){
-            for(Pone pone: pones){
-                if(pone.x == fromX && pone.y == fromY){
-                    from = pone;
-                    break;
-                }
+        for(Pone pone: pones){
+            if(pone.x == fromX && pone.y == fromY){
+                from = pone;
+                break;
             }
-            for(Field field: fields){
-                if(field.x == toX && field.y == toY){
-                    to = field;
-                    break;
-                }
+        }
+        for(Field field: fields){
+            if(field.x == toX && field.y == toY){
+                to = field;
+                break;
             }
         }
         if (from == null || to == null) return false;

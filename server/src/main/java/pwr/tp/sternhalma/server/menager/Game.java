@@ -83,16 +83,14 @@ public abstract class Game {
      * Method used to leave from game.
      * @param player Reference to Player object that wants to leave the game
      */
-    public void leave(Player player) {
+    public synchronized void leave(Player player) {
         if(player.getPlayerId() == adminId){
             if(players.size() == 1){
                     server.removeGame(this);
                 return;
             }else {
-                synchronized (this) {
-                    players.remove(player);
-                    adminId = players.get(0).getPlayerId();
-                }
+                players.remove(player);
+                adminId = players.get(0).getPlayerId();
                 players.get(0).respond(Player.ADMIN);
             }
         }else {
@@ -100,10 +98,8 @@ public abstract class Game {
         }
         if(started){
             sendToAll("{\"type\": \"notify\", \"message\": \"gameEnded\"}");
-            synchronized (this){
-                for(Player p: players){
-                    p.joinGame(null);
-                }
+            for(Player p: players){
+                p.joinGame(null);
             }
             server.removeGame(this);
         }
