@@ -1,0 +1,1 @@
+java -cp target/client-1.0.jar pwr.tp.sternhalma.client.Client
