@@ -1,0 +1,82 @@
+@startuml
+package client{
+class Client <extends Thread >{
+    -socket: Socket
+    -in: BufferedReader
+    -out: PrintWriter
+    -running: boolean
+    ..
+    -game: Sternhalma
+    -lobby: Lobby
+    --
+    +Client()
+    +run()
+    +send(message: JSONObject)
+    +send(message: String)
+    +connect(port: int)
+    +leave()
+    -handleRequest(data String)
+}
+
+class Lobby{
+    TODO
+}
+
+
+    class Sternhalma <extends JFrame >{
+        -client: Client
+        -board: Board
+        -boardImage: BufferedImage
+        -info: JTextArea
+        -source: Filed
+        -destination: Filed
+        -lock: boolean
+        -player: int
+        --
+        +Sternhalma(client: Client, board: int, player: int)
+        +turn()
+        +accept()
+        +reject()
+        +endGame(message: String)
+        +exit(boolean absolute)
+        +updateBoard(fields: JSONArray)
+        -move()
+        -endTurn()
+        -press(mouse: MouseEvent)
+        -buildGUI()
+    }
+
+
+    class Board{
+        -fields: List<Field>
+        --
+        +Board(type: int)
+        +update(x: int, y: int, player: int)
+        +contains(x: int, y: int): Field
+        +setActive(field: Field)
+        +draw(g2d: Graphics2D)
+    }
+
+    class Field {
+        #x: int
+        #y: int
+        #player: int
+        #selected: boolean
+        ..
+        -xPos: int
+        -yPos: int
+        -select: Ellipse2D
+        -pone: Ellipse2D
+        --
+        +Field(x: int, y: int, xPos: int, yPos: int)
+        +contains(x: int, y: int): boolean
+        +draw(g2d: Graphics2D)
+    }
+
+Client *-- Lobby
+Client *--- Sternhalma
+Board -* Sternhalma
+Sternhalma o-- Field
+Board *-- Field
+}
+@enduml
