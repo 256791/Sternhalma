@@ -9,8 +9,6 @@ import java.util.List;
 public class GameMaster {
     private final List<Rule> ruleset;
     private final Board board;
-    private int move;
-    private int lastPlayer;
 
     /**
      * Constructor. After construction need to call addRule to make ruleset
@@ -19,8 +17,6 @@ public class GameMaster {
     public GameMaster(Board board){
         this.board = board;
         this.ruleset = new ArrayList<Rule>();
-        this.lastPlayer = -1;
-        this.move = 0;
     }
 
     /**
@@ -54,21 +50,13 @@ public class GameMaster {
      * @param player id of player performing move action
      * @return true if move is possible
      */
-    public synchronized boolean isValid(Pone from, Field to, int player) {
-        if(lastPlayer != player) {
-            lastPlayer = player;
-            move = 0;
-        }
+    public synchronized boolean isValid(Pone from, Field to, int player, int move) {
         boolean flag = false;
         for(Rule rule: ruleset){
             int result = rule.isValid(from, to, player, move);
             if(result == -1) return false;
             if(result == 1) flag = true;
         }
-        if(flag) {
-            move++;
-            return true;
-        }
-        return false;
+        return flag;
     }
 }

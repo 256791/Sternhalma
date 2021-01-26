@@ -86,6 +86,7 @@ public abstract class Game {
     public synchronized void leave(Player player) {
         if(player.getPlayerId() == adminId){
             if(players.size() == 1){
+                    started = true;
                     server.removeGame(this);
                 return;
             }else {
@@ -97,16 +98,15 @@ public abstract class Game {
             players.remove(player);
         }
         if(started){
-            sendToAll("{\"type\": \"notify\", \"message\": \"gameEnded\"}");
             for(Player p: players){
-                p.joinGame(null);
+                p.kick("Player left during the game");
             }
             server.removeGame(this);
         }
     }
 
     /**
-     * Abstract method used to return JSONObject containing informations about game.
+     * Abstract method used to return JSONObject containing information's about game.
      * Its used to update client game info variables
      * @return JSONObject containing information about instance of game
      */

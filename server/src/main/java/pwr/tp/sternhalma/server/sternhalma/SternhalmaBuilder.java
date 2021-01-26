@@ -25,7 +25,7 @@ public class SternhalmaBuilder implements GameBuilder {
         board.setGameMaster(gameMaster);
         game.setBoard(board);
         game.setPlayerCount(properties.getInt("playerCount"));
-        return  game;
+        return game;
     }
 
     /**
@@ -72,7 +72,7 @@ public class SternhalmaBuilder implements GameBuilder {
             }
             field.adjacent=arr;
         }
-        return  null;
+        return new Board(type, pones, fields);
     }
 
     /**

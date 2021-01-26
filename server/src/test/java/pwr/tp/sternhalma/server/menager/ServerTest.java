@@ -64,7 +64,18 @@ public class ServerTest {
         JSONObject properties;
 
         try {
-            properties = new JSONObject("{name: \"Sternhalma\", defaultSettings: \"true\"}");
+            properties = new JSONObject("{" +
+                    "\"game\": \"sternhalma\"," +
+                    "\"default\": false," +
+                    "\"playerCount\": 2," +
+                    "\"board\": 0," +
+                    "\"rules\":[" +
+                    "{\"rule\": \"OnePerRoundRule\"}," +
+                    "{\"rule\": \"BasicMoveRule\"}," +
+                    "{\"rule\": \"JumpMoveRule\"}," +
+                    "{\"rule\": \"LockedMoveRule\"}" +
+                    "]" +
+                    "}");
             server.newGame(properties);
             server.newGame(properties);
             server.newGame(properties);

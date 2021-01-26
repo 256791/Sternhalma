@@ -7,8 +7,10 @@ public class JumpMoveRule implements Rule {
     @Override
     public int isValid(Pone from, Field to, int player, int move) {
         for(int i=0; i<6; i++) {
-            if(to.adjacent[i].adjacent[i].currentPone==from){
-                if(to.adjacent[i].player!=0) return 1;
+            if(to.adjacent[i] == null) continue;
+            if(to.adjacent[i].adjacent[i] == null) continue;
+            if (to.adjacent[i].adjacent[i].currentPone == from) {
+                if (to.adjacent[i].currentPone != null) return 1;
                 else return -1;
             }
         }

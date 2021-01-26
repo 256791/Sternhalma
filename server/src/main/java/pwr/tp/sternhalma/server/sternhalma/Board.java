@@ -15,15 +15,12 @@ import java.util.List;
  * by game master.
  */
 public class Board {
-    private int type;
+    private final int type;
     private int playerCount;
-    private int currentPlayer;
+    private int moveCount;
     private GameMaster gameMaster;
     protected List<Pone> pones;
     protected List<Field> fields;
-
-    private JSONObject boardStarus;
-    private boolean statusFlag;
 
     /**
      * Initializer of class Board. Lists need to be already build. Board construction
@@ -36,7 +33,6 @@ public class Board {
         this.type = type;
         this.pones = pones;
         this.fields = fields;
-        this.statusFlag = false;
     }
 
     /**
@@ -53,6 +49,7 @@ public class Board {
      * @param players List of players that will play the game
      */
     public void startGame(List<Player> players) {
+        //todo replace this method with proper one
         playerCount = players.size();
         int[] arr = new int[playerCount];
         for(int i=0;i<playerCount; i++){
@@ -104,7 +101,7 @@ public class Board {
 
     /**
      * Method used to move pone from field to field. Check if move is possible and
-     * moves pone to corresponding field
+     * moves pone to corresponding field. After success send change to players.
      * @param fromX x coordinate of pone
      * @param fromY y coordinate of pone
      * @param toX x coordinate of destination field
@@ -113,7 +110,6 @@ public class Board {
      * @return true if move was successful false if rule violated
      */
     public boolean move(int fromX, int fromY, int toX, int toY, int player) {
-        currentPlayer=player;
         Pone from = null;
         Field to = null;
         for(Pone pone: pones){
@@ -122,6 +118,7 @@ public class Board {
                 break;
             }
         }
+
         for(Field field: fields){
             if(field.x == toX && field.y == toY){
                 to = field;
@@ -130,9 +127,11 @@ public class Board {
         }
         if (from == null || to == null) return false;
 
-        if(gameMaster.isValid(from, to, player)){
+        if(from.player!=player) return false;
+
+        if(gameMaster.isValid(from, to, player, moveCount)){
             from.changeField(to);
-            statusFlag = false;
+            moveCount++;
             return true;
         }
         return false;
@@ -142,35 +141,31 @@ public class Board {
      * Method used to end turn. Method also checks if player won in this turn.
      * @return True if player has won in this turn
      */
-    public boolean endTurn() {
-        return gameMaster.hasWon(currentPlayer);
+    public boolean endTurn(int player) {
+        moveCount = 0;
+        return gameMaster.hasWon(player);
     }
 
     /**
      * Method used to get information about current board state.
-     * If something changed updates json before send.
      * @return JSONObject containing information about current board status
      */
     public synchronized JSONObject getBoardStatus() {
-        if(!statusFlag) {
-            boardStarus = new JSONObject();
-            JSONArray board = new JSONArray();
-            try {
-                boardStarus.append("type", "notify");
-                boardStarus.append("message", "boardStatus");
-                boardStarus.append("players", playerCount);
-                for (Pone pone : pones){
-                    JSONObject jsonPone = new JSONObject();
-                    jsonPone.append("x", pone.x);
-                    jsonPone.append("y", pone.y);
-                    jsonPone.append("player", pone.player);
-                    board.put(jsonPone);
-                }
-                boardStarus.append("board", board);
-            } catch (JSONException ignore) {}
-            statusFlag = true;
-        }
-        return boardStarus;
+        JSONObject boardStatus = new JSONObject();
+        JSONArray board = new JSONArray();
+        try {
+            boardStatus.put("type", "notify");
+            boardStatus.put("message", "boardStatus");
+            for (Pone pone : pones){
+                JSONObject jsonPone = new JSONObject();
+                jsonPone.put("x", pone.x);
+                jsonPone.put("y", pone.y);
+                jsonPone.put("player", pone.playerN);
+                board.put(jsonPone);
+            }
+            boardStatus.put("board", board);
+        } catch (JSONException ignore) {}
+        return boardStatus;
     }
 
     /**

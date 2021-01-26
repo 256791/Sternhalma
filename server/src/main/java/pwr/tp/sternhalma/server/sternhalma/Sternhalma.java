@@ -1,5 +1,6 @@
 package pwr.tp.sternhalma.server.sternhalma;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import pwr.tp.sternhalma.server.menager.Game;
@@ -58,15 +59,12 @@ public class Sternhalma extends Game {
     public void action(Player player, JSONObject action) throws JSONException {
         String type = action.getString("type");
         switch (type) {
-            case "leave" -> {
+            case "leave" ->
                 leave(player);
-            }
-            case "getGameInfo" -> {
+            case "getGameInfo" ->
                 player.respond(getGameInfo());
-            }
-            case "getBoardStatus" -> {
+            case "getBoardStatus" ->
                 player.respond(board.getBoardStatus());
-            }
             case "move" -> {
                 if (currentPlayerId == player.getPlayerId()) {
                     synchronized (this) {
@@ -75,6 +73,22 @@ public class Sternhalma extends Game {
                         int dx = action.getInt("toX");
                         int dy = action.getInt("toY");
                         if (board.move(sx, sy, dx, dy, player.getPlayerId())) {
+                            JSONObject change = new JSONObject();
+                            change.put("type", "notify");
+                            change.put("message", "boardStatus");
+                            JSONArray board = new JSONArray();
+                            JSONObject jsonField = new JSONObject();
+                            jsonField.put("x", sx);
+                            jsonField.put("y", sy);
+                            jsonField.put("player", 0);
+                            board.put(jsonField);
+                            jsonField = new JSONObject();
+                            jsonField.put("x", dx);
+                            jsonField.put("y", dy);
+                            jsonField.put("player", players.indexOf(player)+1);
+                            board.put(jsonField);
+                            change.put("board", board);
+                            sendToAll(change);
                             player.respond(Player.ACCEPT);
                         } else {
                             player.respond(Player.WRONG_VAL);
@@ -86,12 +100,12 @@ public class Sternhalma extends Game {
             }
             case "endTurn" -> {
                 if (currentPlayerId == player.getPlayerId()) {
-                    if (board.endTurn()) {
+                    if (board.endTurn(player.getPlayerId())) {
                         JSONObject win = new JSONObject();
                         try {
-                            win.append("type", "notify");
-                            win.append("message", "winner");
-                            win.append("id", player.getPlayerId());
+                            win.put("type", "notify");
+                            win.put("message", "winner");
+                            win.put("id", player.getPlayerId());
                         } catch (JSONException ignore) {
                         }
                         sendToAll(win);
@@ -111,9 +125,8 @@ public class Sternhalma extends Game {
                 }
                 else player.respond(Player.NO_PERM);
             }
-            default -> {
+            default ->
                 player.respond(Player.WRONG_VAL);
-            }
         }
     }
 
@@ -157,17 +170,27 @@ public class Sternhalma extends Game {
                             if (players.size() == playerCount) {
                                 started = true;
                                 player.respond(Player.ACCEPT);
+                                board.startGame(players);
+                                for(int i=0; i<players.size(); i++){
+                                    JSONObject start = new JSONObject();
+                                    start.put("type", "notify");
+                                    start.put("message", "gameStarted");
+                                    start.put("player", i+1);
+                                    start.put("board", board.getType());
+                                    players.get(i).respond(start);
+                                }
+                                sendToAll(board.getBoardStatus());
                                 Player tplayer;
-                                    tplayer = players.get(0);
+                                tplayer = players.get(0);
                                 currentPlayerId = tplayer.getPlayerId();
                                 tplayer.respond(Player.TURN);
-                            } else {
-                                player.respond(Player.WRONG_VAL);
-                            }
-                        } else {
-                            player.respond(Player.WRONG_VAL);
-                        }
+
+                            } else player.respond(Player.WRONG_VAL);
+
+                        } else player.respond(Player.WRONG_VAL);
                     }
+                    default ->
+                        player.respond(Player.WRONG_VAL);
                 }
             } else {
                 player.respond(Player.NO_PERM);
@@ -184,12 +207,13 @@ public class Sternhalma extends Game {
     protected JSONObject getGameInfo() {
         JSONObject info = new JSONObject();
         try{
-            info.append("type","gameInfo");
-            info.append("game", "sternhalma");
-            info.append("gameId", getId());
-            info.append("started", started);
-            info.append("playerCount", playerCount);
-            //info.append("board", board.getType());
+            info.put("type","notify");
+            info.put("message","gameInfo");
+            info.put("game", "sternhalma");
+            info.put("gameId", getId());
+            info.put("started", started);
+            info.put("playerCount", playerCount);
+            info.put("board", board.getType());
         } catch (JSONException ignore) {}
         return info;
     }

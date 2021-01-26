@@ -42,12 +42,14 @@ public class Sternhalma extends JFrame {
     }
 
     public void accept(){
-        info.setText("OK");
-        source.selected = false;
-        source = destination;
-        destination = null;
-        repaint();
-        lock = false;
+        if(source!=null && destination!=null) {
+            info.setText("OK");
+            source.selected = false;
+            source = destination;
+            destination = null;
+            repaint();
+            lock = false;
+        }
     }
 
     public void reject(){
@@ -92,13 +94,13 @@ public class Sternhalma extends JFrame {
                 JSONObject message = new JSONObject();
                 try {
                     JSONObject action = new JSONObject();
-                    action.append("type", "move");
-                    action.append("fromX", source.x);
-                    action.append("fromY", source.y);
-                    action.append("toX", destination.x);
-                    action.append("toY", destination.y);
-                    message.append("type", "action");
-                    message.append("action", action);
+                    action.put("type", "move");
+                    action.put("fromX", source.x);
+                    action.put("fromY", source.y);
+                    action.put("toX", destination.x);
+                    action.put("toY", destination.y);
+                    message.put("type", "action");
+                    message.put("action", action);
                 } catch (JSONException ignore) {
                 }
                 client.send(message);

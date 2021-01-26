@@ -143,33 +143,26 @@ public class Player extends Thread{
     private void handleRequest(JSONObject request) throws JSONException{
         String type = request.getString("type");
         switch (type) {
-            case "ping" -> {
+            case "ping" ->
                 respond(PING);
-                break;
-            }
             case "action" -> {
                 if (game == null) throw new JSONException("No game assigned to player");
                 JSONObject action = request.getJSONObject("action");
                 game.action(this, action);
-                break;
             }
             case "option" -> {
                 if (game == null) throw new JSONException("No game assigned to player");
-                JSONObject change = request.getJSONObject("change");
-                game.option(this, change);
-                break;
+                game.option(this, request);
             }
             case "join" -> {
                 int id = request.getInt("id");
                 Game game = server.findGame(id);
                 joinGame(game);
-                break;
             }
             case "create" -> {
                 JSONObject properties = request.getJSONObject("properties");
                 Game game = server.newGame(properties);
                 joinGame(game);
-                break;
             }
             default -> throw new JSONException("Message not recognized");
         }
@@ -191,5 +184,18 @@ public class Player extends Thread{
             }
         }
         respond(GAME_CON_ERR);
+    }
+
+    /**
+     * Method used to kick players from game. It sets player game reference to null
+     * and sends information to client containing kick reason.
+     */
+    public void kick(String message){
+        try {
+            JSONObject kick = new JSONObject("{\"type\": \"notify\", \"message\": \"kick\", " +
+                    "\"reason\": \"" + message + "\"}");
+            respond(kick);
+        } catch (JSONException ignore) {}
+        game = null;
     }
 }

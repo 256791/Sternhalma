@@ -74,14 +74,27 @@ public class PlayerTest {
 
     @Test(timeout = 1000)
     public void testCreateJoin(){
-        out.println("{\"type\": \"create\", \"properties\": " +
-                "{\"game\": \"sternhalma\", \"players\": 2, \"board\": \"default\"}}");
+        out.println("{" +
+                        "\"type\": \"create\"," +
+                        "\"properties\":{" +
+                            "\"game\": \"sternhalma\"," +
+                            "\"default\": false," +
+                            "\"playerCount\": 2," +
+                            "\"board\": 0," +
+                            "\"rules\":[" +
+                                "{\"rule\": \"OnePerRoundRule\"}," +
+                                "{\"rule\": \"BasicMoveRule\"}," +
+                                "{\"rule\": \"JumpMoveRule\"}," +
+                                "{\"rule\": \"LockedMoveRule\"}" +
+                            "]" +
+                        "}" +
+                    "}");
 
         try { response = in.readLine(); } catch (IOException e) {
             fail("Could not connect to server");
         }
-        if(response.equals(Player.GAME_CON_ERR)) fail("Cant create game");
-        if(response.equals(Player.JSON_ERR)) fail("Cant create game");
+        if(response.equals(Player.GAME_CON_ERR)) fail("Cant create game: connectionerr");
+        if(response.equals(Player.JSON_ERR)) fail("Cant create game: jsonerr");
 
         try{
             Socket client2 = new Socket("localhost", PORT);

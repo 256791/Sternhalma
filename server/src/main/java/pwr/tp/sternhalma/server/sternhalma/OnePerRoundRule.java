@@ -20,14 +20,14 @@ public class OnePerRoundRule implements Rule {
             return 0;
         }else{
             if(lastPone!=from) return -1;
-            if(basic) {
-                for (int i = 0; i < 6; i++) {
-                    if (from.currentField.adjacent[i] == to) {
-                        return 0;
-                    }
+            for (int i = 0; i < 6; i++) {
+                if (from.currentField.adjacent[i] == to) {
+                    if(basic) return 0;
+                    else return -1;
                 }
             }
-            return -1;
+            if(basic) return -1;
+            else return 0;
         }
     }
 }
