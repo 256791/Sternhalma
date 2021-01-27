@@ -66,6 +66,7 @@ public class Sternhalma extends JFrame {
         lock = true;
         JOptionPane.showMessageDialog(this, message, "Info",
                 JOptionPane.INFORMATION_MESSAGE);
+        client.leave();
     }
 
     public void exit(boolean absolute){
@@ -93,14 +94,11 @@ public class Sternhalma extends JFrame {
                 info.setText(" Wait...");
                 JSONObject message = new JSONObject();
                 try {
-                    JSONObject action = new JSONObject();
-                    action.put("type", "move");
-                    action.put("fromX", source.x);
-                    action.put("fromY", source.y);
-                    action.put("toX", destination.x);
-                    action.put("toY", destination.y);
-                    message.put("type", "action");
-                    message.put("action", action);
+                    message.put("type", "move");
+                    message.put("fromX", source.x);
+                    message.put("fromY", source.y);
+                    message.put("toX", destination.x);
+                    message.put("toY", destination.y);
                 } catch (JSONException ignore) {
                 }
                 client.send(message);
@@ -125,7 +123,7 @@ public class Sternhalma extends JFrame {
                 destination = null;
             }
             repaint();
-            client.send(Client.ENDTURN);
+            client.send("{\"type\":\"turn\"}");
         }
     }
 

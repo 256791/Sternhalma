@@ -33,21 +33,12 @@ public abstract class Game {
     }
 
     /**
-     * Abstract method used to make in game action (move end turn or else)
+     * Abstract method used to communicate with game
      * @param player reference to the Player that send the action
-     * @param action JSONObject containing description of action to perform
+     * @param request JSONObject containing request to handle
      * @throws JSONException if error inside JSON (corrupted, missing values etc)
      */
-    public abstract void action(Player player, JSONObject action) throws JSONException;
-
-    /**
-     * Abstract method used to change Game options
-     * (change admin, change player count or else)
-     * @param player reference to the Player that send the change request
-     * @param change JSONObject containing description of change to be done
-     * @throws JSONException if error inside JSON (corrupted, missing values etc)
-     */
-    public abstract void option(Player player, JSONObject change) throws JSONException;
+    public abstract void handleRequest(Player player, JSONObject request) throws JSONException;
 
     /**
      * Get method for id field of Game
@@ -68,10 +59,8 @@ public abstract class Game {
                 players.add(player);
                 if (players.size() == 1) {
                     adminId = player.getPlayerId();
-                    player.respond(Player.ADMIN);
                 }
-                player.respond(Player.ACCEPT);
-                player.respond(getGameInfo());
+                player.respond(getGameInfo(player.getPlayerId()==adminId));
                 return true;
             }
         }
@@ -92,7 +81,7 @@ public abstract class Game {
             }else {
                 players.remove(player);
                 adminId = players.get(0).getPlayerId();
-                players.get(0).respond(Player.ADMIN);
+                players.get(0).respond(getGameInfo(true));
             }
         }else {
             players.remove(player);
@@ -110,7 +99,7 @@ public abstract class Game {
      * Its used to update client game info variables
      * @return JSONObject containing information about instance of game
      */
-    protected abstract JSONObject getGameInfo();
+    protected abstract JSONObject getGameInfo(boolean admin);
 
     /**
      * Method used to send message to all Players connected to the game

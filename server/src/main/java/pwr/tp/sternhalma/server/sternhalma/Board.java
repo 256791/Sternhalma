@@ -59,19 +59,19 @@ public class Board {
         while(iter.hasNext()){
             Pone pone = iter.next();
             if(playerCount == 2){
-                if(pone.player == 1) pone.player = arr[0];
-                else if(pone.player == 4) pone.player = arr[1];
+                if(pone.player == 1) {pone.player = arr[0]; pone.playerN=1;}
+                else if(pone.player == 4) {pone.player = arr[1]; pone.playerN=2;}
                 else iter.remove();
             } else if(playerCount == 3){
-                if(pone.player == 1) pone.player = arr[0];
-                else if(pone.player == 3) pone.player = arr[1];
-                else if(pone.player == 5) pone.player = arr[2];
+                if(pone.player == 1) {pone.player = arr[0]; pone.playerN=1;}
+                else if(pone.player == 3) {pone.player = arr[1]; pone.playerN=2;}
+                else if(pone.player == 5) {pone.player = arr[2]; pone.playerN=3;}
                 else iter.remove();
             } else if(playerCount == 4){
-                if(pone.player == 1) pone.player = arr[0];
-                else if(pone.player == 2) pone.player = arr[1];
-                else if(pone.player == 4) pone.player = arr[2];
-                else if(pone.player == 5) pone.player = arr[3];
+                if(pone.player == 1) {pone.player = arr[0]; pone.playerN=1;}
+                else if(pone.player == 2) {pone.player = arr[1]; pone.playerN=2;}
+                else if(pone.player == 4) {pone.player = arr[2]; pone.playerN=3;}
+                else if(pone.player == 5) {pone.player = arr[3]; pone.playerN=4;}
                 else iter.remove();
             } else if (playerCount == 6){
                 pone.player = arr[pone.player-1];
@@ -154,8 +154,7 @@ public class Board {
         JSONObject boardStatus = new JSONObject();
         JSONArray board = new JSONArray();
         try {
-            boardStatus.put("type", "notify");
-            boardStatus.put("message", "boardStatus");
+            boardStatus.put("type", "boardData");
             for (Pone pone : pones){
                 JSONObject jsonPone = new JSONObject();
                 jsonPone.put("x", pone.x);

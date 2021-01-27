@@ -111,7 +111,7 @@ public class PlayerTest {
 
         out.println("{\"type\": \"join\", \"id\": 22}");
 
-        try {in.readLine(); in.readLine(); response = in.readLine(); } catch (IOException e) {
+        try {in.readLine(); response = in.readLine(); } catch (IOException e) {
             fail("Could not connect to server");
         }
 

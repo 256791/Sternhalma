@@ -18,6 +18,7 @@ public class Pone {
     public void changeField(Field destinaton){
         currentField.currentPone = null;
         currentField = destinaton;
+        destinaton.currentPone = this;
         x = destinaton.x;
         y = destinaton.y;
     }

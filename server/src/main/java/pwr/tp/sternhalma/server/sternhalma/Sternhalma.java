@@ -50,32 +50,31 @@ public class Sternhalma extends Game {
     }
 
     /**
-     * Implementation of abstract method responsible for action handling
+     * Implementation of abstract method responsible for request handling
      * @param player reference to the Player that send the action
-     * @param action JSONObject containing description of action to perform
+     * @param request JSONObject containing description of request to handle
      * @throws JSONException if JSONObject have wrong or missing values
      */
     @Override
-    public void action(Player player, JSONObject action) throws JSONException {
-        String type = action.getString("type");
+    public void handleRequest(Player player, JSONObject request) throws JSONException {
+        String type = request.getString("type");
         switch (type) {
             case "leave" ->
                 leave(player);
-            case "getGameInfo" ->
-                player.respond(getGameInfo());
-            case "getBoardStatus" ->
+            case "getGameData" ->
+                player.respond(getGameInfo(player.getPlayerId()==adminId));
+            case "getBoardData" ->
                 player.respond(board.getBoardStatus());
             case "move" -> {
                 if (currentPlayerId == player.getPlayerId()) {
                     synchronized (this) {
-                        int sx = action.getInt("fromX");
-                        int sy = action.getInt("fromY");
-                        int dx = action.getInt("toX");
-                        int dy = action.getInt("toY");
+                        int sx = request.getInt("fromX");
+                        int sy = request.getInt("fromY");
+                        int dx = request.getInt("toX");
+                        int dy = request.getInt("toY");
                         if (board.move(sx, sy, dx, dy, player.getPlayerId())) {
                             JSONObject change = new JSONObject();
-                            change.put("type", "notify");
-                            change.put("message", "boardStatus");
+                            change.put("type", "boardData");
                             JSONArray board = new JSONArray();
                             JSONObject jsonField = new JSONObject();
                             jsonField.put("x", sx);
@@ -94,107 +93,79 @@ public class Sternhalma extends Game {
                             player.respond(Player.WRONG_VAL);
                         }
                     }
-                } else {
-                player.respond(Player.NO_PERM);
+                } else player.respond(Player.NO_PERM);
             }
-            }
-            case "endTurn" -> {
+            case "turn" -> {
                 if (currentPlayerId == player.getPlayerId()) {
                     if (board.endTurn(player.getPlayerId())) {
                         JSONObject win = new JSONObject();
                         try {
-                            win.put("type", "notify");
-                            win.put("message", "winner");
-                            win.put("id", player.getPlayerId());
+                            win.put("type", "winner");
+                            win.put("id", players.indexOf(player)+1);
                         } catch (JSONException ignore) {
                         }
                         sendToAll(win);
                         leave(player);
                     }
-                    synchronized (this) {
+                    else synchronized (this) {
                         if (currentPlayerId == player.getPlayerId()) {
                             int index = players.indexOf(player);
                             index = (index + 1) % playerCount;
                             Player tplayer = players.get(index);
                             currentPlayerId = tplayer.getPlayerId();
-                            player.respond(Player.ACCEPT);
-                            tplayer.respond(Player.TURN);
+                            tplayer.respond("{\"type\": \"turn\"}");
                         }
                         else player.respond(Player.NO_PERM);
                     }
                 }
                 else player.respond(Player.NO_PERM);
             }
-            default ->
-                player.respond(Player.WRONG_VAL);
-        }
-    }
-
-    /**
-     * Implementation of abstract method responsible for option change handling
-     * @param player reference to the Player that send the change request
-     * @param change JSONObject containing description of change to be done
-     * @throws JSONException if JSONObject have wrong or missing values
-     */
-    @Override
-    public void option(Player player, JSONObject change) throws JSONException {
-        synchronized (this) {
-            if (player.getPlayerId() == adminId) {
-                String option = change.getString("option");
-                Object value = change.get("value");
-                switch (option) {
-                    case "playerCount" -> {
-                        if (value instanceof Integer) {
-                            int val = (Integer) value;
-                            if (setPlayerCount(val)) {
-                                player.respond(Player.ACCEPT);
+            case "start" -> {
+                if(player.getPlayerId() == adminId) {
+                    if (!started) {
+                        if (players.size() == playerCount) {
+                            started = true;
+                            player.respond(Player.ACCEPT);
+                            board.startGame(players);
+                            for (int i = 0; i < players.size(); i++) {
+                                JSONObject start = new JSONObject();
+                                start.put("type", "start");
+                                start.put("player", i + 1);
+                                start.put("board", board.getType());
+                                players.get(i).respond(start);
                             }
-                            player.respond(Player.WRONG_VAL);
-                        } else throw new JSONException("Type mismatch");
-                    }
-                    case "admin" -> {
-                        if (value instanceof Integer) {
-                            for (Player p : players) {
-                                if (p.getPlayerId() == (Integer) value) {
-                                    adminId = (Integer) value;
-                                    player.respond(Player.ACCEPT);
-                                    p.respond(Player.ADMIN);
-                                    return;
-                                }
-                            }
-                            player.respond(Player.WRONG_VAL);
-                        } else throw new JSONException("Mismatch types");
-                    }
-                    case "start" -> {
-                        if (!started) {
-                            if (players.size() == playerCount) {
-                                started = true;
-                                player.respond(Player.ACCEPT);
-                                board.startGame(players);
-                                for(int i=0; i<players.size(); i++){
-                                    JSONObject start = new JSONObject();
-                                    start.put("type", "notify");
-                                    start.put("message", "gameStarted");
-                                    start.put("player", i+1);
-                                    start.put("board", board.getType());
-                                    players.get(i).respond(start);
-                                }
-                                sendToAll(board.getBoardStatus());
-                                Player tplayer;
-                                tplayer = players.get(0);
-                                currentPlayerId = tplayer.getPlayerId();
-                                tplayer.respond(Player.TURN);
-
-                            } else player.respond(Player.WRONG_VAL);
+                            sendToAll(board.getBoardStatus());
+                            Player tplayer;
+                            tplayer = players.get(0);
+                            currentPlayerId = tplayer.getPlayerId();
+                            tplayer.respond("{\"type\": \"turn\"}");
 
                         } else player.respond(Player.WRONG_VAL);
-                    }
-                    default ->
-                        player.respond(Player.WRONG_VAL);
-                }
-            } else {
-                player.respond(Player.NO_PERM);
+
+                    } else player.respond(Player.WRONG_VAL);
+                } else player.respond(Player.NO_PERM);
             }
+            case "gameData" -> {
+                if (player.getPlayerId() == adminId) {
+                    switch (request.getString("change")) {
+                        case "playerCount" -> {
+                            int val = request.getInt("value");
+                            if (setPlayerCount(val)) {
+                                synchronized (this) {
+                                    for(Player p:players) {
+                                        p.respond(getGameInfo(p.getPlayerId()==adminId));
+                                    }
+                                }
+                            } else player.respond(Player.WRONG_VAL);
+                        }
+                        case "admin" ->{
+                            //ignore not implemented in client
+                        }
+                    }
+                } else player.respond(Player.NO_PERM);
+            }
+            default ->
+                player.respond(Player.WRONG_VAL);
         }
     }
 
@@ -204,16 +175,16 @@ public class Sternhalma extends Game {
      * @return JSONObject containing information about current game
      */
     @Override
-    protected JSONObject getGameInfo() {
+    protected JSONObject getGameInfo(boolean admin) {
         JSONObject info = new JSONObject();
         try{
-            info.put("type","notify");
-            info.put("message","gameInfo");
+            info.put("type","gameData");
             info.put("game", "sternhalma");
             info.put("gameId", getId());
             info.put("started", started);
             info.put("playerCount", playerCount);
             info.put("board", board.getType());
+            info.put("admin", admin);
         } catch (JSONException ignore) {}
         return info;
     }

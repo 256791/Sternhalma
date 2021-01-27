@@ -51,7 +51,7 @@ public class SternhalmaBuilder implements GameBuilder {
             Field field = new Field(jField.getInt("x"),
                     jField.getInt("y"), jField.getInt("player"));
             if(field.player!=0){
-                Pone pone = new Pone(field.x, field.y, (field.player+2)%6 +1);
+                Pone pone = new Pone(field.x, field.y, field.player);
                 pone.currentField = field;
                 field.currentPone = pone;
                 pones.add(pone);

@@ -28,30 +28,22 @@ public class Player extends Thread{
 
     public static final String PING;
     public static final String ACCEPT;
-    //notifications
-    public static final String ADMIN;
-    public static final String TURN;
-    public static final String TURNEND;
     //rejections
     public static final String NO_PERM;
     public static final String WRONG_VAL;
+    public static final String GAME_CON_ERR;
     //errors
     public static final String JSON_ERR;
-    public static final String GAME_CON_ERR;
 
     static {
         PING = "{\"type\": \"ping\"}";
         ACCEPT = "{\"type\": \"accept\"}";
 
-        ADMIN = "{\"type\": \"notify\", \"message\": \"youAreTheNewAdmin\"}";
-        TURN = "{\"type\": \"notify\", \"message\": \"yourTurn\"}";
-        TURNEND = "{\"type\": \"notify\", \"message\": \"turnEnded\"}";
-
         NO_PERM = "{\"type\": \"reject\", \"reason\": \"noPermissions\"}";
         WRONG_VAL = "{\"type\": \"reject\", \"reason\": \"wrongValue\"}";
+        GAME_CON_ERR = "{\"type\": \"reject\", \"reason\": \"CantConnectToGame\"}";
 
         JSON_ERR = "{\"type\": \"error\", \"error\": \"JSONException\"}";
-        GAME_CON_ERR = "{\"type\": \"error\", \"error\": \"CantConnectToGame\"}";
     }
 
 
@@ -145,15 +137,6 @@ public class Player extends Thread{
         switch (type) {
             case "ping" ->
                 respond(PING);
-            case "action" -> {
-                if (game == null) throw new JSONException("No game assigned to player");
-                JSONObject action = request.getJSONObject("action");
-                game.action(this, action);
-            }
-            case "option" -> {
-                if (game == null) throw new JSONException("No game assigned to player");
-                game.option(this, request);
-            }
             case "join" -> {
                 int id = request.getInt("id");
                 Game game = server.findGame(id);
@@ -164,7 +147,10 @@ public class Player extends Thread{
                 Game game = server.newGame(properties);
                 joinGame(game);
             }
-            default -> throw new JSONException("Message not recognized");
+            default -> {
+                if (game == null) throw new JSONException("No game assigned to player");
+                game.handleRequest(this, request);
+            }
         }
     }
 
@@ -192,7 +178,7 @@ public class Player extends Thread{
      */
     public void kick(String message){
         try {
-            JSONObject kick = new JSONObject("{\"type\": \"notify\", \"message\": \"kick\", " +
+            JSONObject kick = new JSONObject("{\"type\": \"kick\", " +
                     "\"reason\": \"" + message + "\"}");
             respond(kick);
         } catch (JSONException ignore) {}
